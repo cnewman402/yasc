@@ -64,31 +64,25 @@ class YetAnotherStockCard extends HTMLElement {
     var self = this;
     var symbols = this._config.symbols;
     
-    console.log('YASC: Starting to fetch data for symbols:', symbols);
-    
     // Fetch real data for all symbols
     this._stocksData = {};
     var promises = [];
     
     for (var i = 0; i < symbols.length; i++) {
       var symbol = symbols[i];
-      console.log('YASC: Creating fetch promise for symbol:', symbol);
       promises.push(this.fetchSingleStock(symbol, i));
     }
     
     Promise.all(promises).then(function(results) {
-      console.log('YASC: All fetch promises resolved, results:', results);
       for (var i = 0; i < results.length; i++) {
         var stockData = results[i];
         if (stockData && stockData.symbol) {
-          console.log('YASC: Setting data for', stockData.symbol, 'Market state:', stockData.marketState);
           self._stocksData[stockData.symbol] = stockData;
         }
       }
-      console.log('YASC: Final stock data:', self._stocksData);
       self.render();
     }).catch(function(error) {
-      console.error('YASC: Error in Promise.all:', error);
+      console.error('YASC: Error fetching stock data:', error);
       self.render();
     });
   }
@@ -97,14 +91,10 @@ class YetAnotherStockCard extends HTMLElement {
     var self = this;
     var displayName = this._config.names[index] || symbol;
     
-    console.log('YASC: Attempting to fetch live data for', symbol);
-    
     // Try multiple approaches for getting real data
     var corsProxy = 'https://api.allorigins.win/raw?url=';
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + symbol;
     var fullUrl = corsProxy + encodeURIComponent(yahooUrl);
-    
-    console.log('YASC: Making request to:', fullUrl);
     
     return fetch(fullUrl, {
       method: 'GET',
@@ -113,23 +103,17 @@ class YetAnotherStockCard extends HTMLElement {
       }
     })
     .then(function(response) {
-      console.log('YASC: Response status for', symbol, ':', response.status, response.ok);
       if (!response.ok) {
         throw new Error('HTTP error! status: ' + response.status);
       }
       return response.json();
     })
     .then(function(data) {
-      console.log('YASC: Raw API response for', symbol, ':', data);
-      
       if (data && data.chart && data.chart.result && data.chart.result.length > 0) {
         var result = data.chart.result[0];
         var meta = result.meta;
         
-        console.log('YASC: Meta data for', symbol, ':', meta);
-        
         if (!meta.regularMarketPrice) {
-          console.log('YASC: No regularMarketPrice found for', symbol);
           throw new Error('No price data available');
         }
         
@@ -137,8 +121,6 @@ class YetAnotherStockCard extends HTMLElement {
         var previousClose = meta.previousClose;
         var change = currentPrice - previousClose;
         var changePercent = (change / previousClose) * 100;
-        
-        console.log('YASC: Successfully parsed live data for', symbol, 'Price:', currentPrice, 'Change:', change);
         
         return {
           symbol: symbol,
@@ -154,14 +136,11 @@ class YetAnotherStockCard extends HTMLElement {
           error: null
         };
       } else {
-        console.log('YASC: Invalid data format for', symbol, 'Expected chart.result but got:', data);
         throw new Error('Invalid data format');
       }
     })
     .catch(function(error) {
-      console.log('YASC: Live data failed for', symbol, 'Error:', error.message, 'Falling back to demo data');
-      
-      // Fallback to demo data if real data fails
+      // Fallback to demo data if real data fails (silent fallback)
       var demoData = self.generateDemoData(symbol);
       return {
         symbol: symbol,
