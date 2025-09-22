@@ -1,4 +1,4 @@
-console.log('YASC v1.2.0 - Fresh Implementation with GUI Editor');
+console.log('YASC v1.3.0 - Complete Implementation with Fixed Input Focus');
 
 class YetAnotherStockCard extends HTMLElement {
   constructor() {
@@ -303,7 +303,7 @@ class YascCardEditor extends HTMLElement {
     
     html += '<div style="margin-bottom: 20px;">';
     html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
-    html += '<label style="font-weight: 500; font-size: 16px;">Stock Symbols:</label>';
+    html += '<label style="font-weight: 500; font-size: 16px; color: var(--primary-text-color, #ffffff);">Stock Symbols:</label>';
     html += '<button type="button" id="add-symbol" style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">+ Add Symbol</button>';
     html += '</div>';
     
@@ -317,13 +317,13 @@ class YascCardEditor extends HTMLElement {
     html += '</div>';
     
     html += '<div style="margin-bottom: 16px;">';
-    html += '<label style="font-weight: 500;">Update Interval:</label><br>';
-    html += '<input type="number" id="update_interval" value="' + (this._config.update_interval || 60) + '" min="10" max="3600" style="width: 100px; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 4px;">';
-    html += '<span style="font-size: 12px; color: #666; margin-left: 8px;">seconds (10-3600)</span>';
+    html += '<label style="font-weight: 500; color: var(--primary-text-color, #ffffff);">Update Interval:</label><br>';
+    html += '<input type="number" id="update_interval" value="' + (this._config.update_interval || 60) + '" min="10" max="3600" style="width: 100px; padding: 8px; margin-top: 4px; border: 1px solid var(--divider-color, #555); border-radius: 4px; background: var(--primary-background-color, #1e1e1e); color: var(--primary-text-color, #ffffff);">';
+    html += '<span style="font-size: 12px; color: var(--secondary-text-color, #aaa); margin-left: 8px;">seconds (10-3600)</span>';
     html += '</div>';
     
     html += '<div style="margin-bottom: 16px;">';
-    html += '<label style="font-weight: 500;"><input type="checkbox" id="show_chart" ' + (this._config.show_chart === true ? 'checked' : '') + ' style="margin-right: 8px;"> Show Sparkline Charts</label>';
+    html += '<label style="font-weight: 500; color: var(--primary-text-color, #ffffff);"><input type="checkbox" id="show_chart" ' + (this._config.show_chart === true ? 'checked' : '') + ' style="margin-right: 8px;"> Show Sparkline Charts</label>';
     html += '</div>';
     
     html += '<div style="background: var(--secondary-background-color, #2c2c2c); padding: 12px; border-radius: 4px; margin-top: 16px; border: 1px solid var(--divider-color, #555);">';
@@ -493,7 +493,16 @@ class YascCardEditor extends HTMLElement {
       symbols.push((this._config.symbols || ['AAPL'])[i]);
     }
     symbols[index] = value;
-    this.updateConfig('symbols', symbols);
+    
+    // Update config without triggering full re-render
+    var newConfig = {};
+    for (var prop in this._config) {
+      newConfig[prop] = this._config[prop];
+    }
+    newConfig.symbols = symbols;
+    this._config = newConfig;
+    this.configChanged(newConfig);
+    // Don't call this.render() here to prevent losing focus
   }
 
   updateName(index, value) {
@@ -505,7 +514,16 @@ class YascCardEditor extends HTMLElement {
       names.push('');
     }
     names[index] = value;
-    this.updateConfig('names', names);
+    
+    // Update config without triggering full re-render
+    var newConfig = {};
+    for (var prop in this._config) {
+      newConfig[prop] = this._config[prop];
+    }
+    newConfig.names = names;
+    this._config = newConfig;
+    this.configChanged(newConfig);
+    // Don't call this.render() here to prevent losing focus
   }
 
   updateConfig(key, value) {
@@ -546,4 +564,4 @@ window.customCards.push({
   documentationURL: 'https://github.com/yourusername/yasc'
 });
 
-console.log('YASC v1.2.0 - Fresh Implementation Loaded Successfully!');
+console.log('YASC v1.3.0 - Complete Implementation Loaded Successfully!');
