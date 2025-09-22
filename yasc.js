@@ -64,31 +64,100 @@ class YetAnotherStockCard extends HTMLElement {
     var self = this;
     var symbols = this._config.symbols;
     
-    // Generate demo data for all symbols
+    // Fetch real data for all symbols
     this._stocksData = {};
+    var promises = [];
     
     for (var i = 0; i < symbols.length; i++) {
       var symbol = symbols[i];
-      var nameIndex = i;
-      var displayName = this._config.names[nameIndex] || symbol;
-      var demoData = this.generateDemoData(symbol);
+      promises.push(this.fetchSingleStock(symbol, i));
+    }
+    
+    Promise.all(promises).then(function(results) {
+      for (var i = 0; i < results.length; i++) {
+        var stockData = results[i];
+        if (stockData && stockData.symbol) {
+          self._stocksData[stockData.symbol] = stockData;
+        }
+      }
+      self.render();
+    }).catch(function(error) {
+      console.error('Error fetching stock data:', error);
+      self.render();
+    });
+  }
+
+  fetchSingleStock(symbol, index) {
+    var self = this;
+    var displayName = this._config.names[index] || symbol;
+    
+    // Try multiple approaches for getting real data
+    var corsProxy = 'https://api.allorigins.win/raw?url=';
+    var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + symbol;
+    var fullUrl = corsProxy + encodeURIComponent(yahooUrl);
+    
+    return fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('HTTP error! status: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      if (data && data.chart && data.chart.result && data.chart.result.length > 0) {
+        var result = data.chart.result[0];
+        var meta = result.meta;
+        
+        if (!meta.regularMarketPrice) {
+          throw new Error('No price data available');
+        }
+        
+        var currentPrice = meta.regularMarketPrice;
+        var previousClose = meta.previousClose;
+        var change = currentPrice - previousClose;
+        var changePercent = (change / previousClose) * 100;
+        
+        return {
+          symbol: symbol,
+          name: displayName,
+          price: currentPrice.toFixed(2),
+          change: change.toFixed(2),
+          changePercent: changePercent.toFixed(2),
+          currency: meta.currency || 'USD',
+          marketState: meta.marketState || 'REGULAR',
+          lastUpdated: new Date().toLocaleTimeString(),
+          chartData: result.indicators?.quote?.[0] || null,
+          timestamps: result.timestamp || null,
+          error: null
+        };
+      } else {
+        throw new Error('Invalid data format');
+      }
+    })
+    .catch(function(error) {
+      console.log('Live data failed for ' + symbol + ', using demo data:', error.message);
       
-      this._stocksData[symbol] = {
+      // Fallback to demo data if real data fails
+      var demoData = self.generateDemoData(symbol);
+      return {
         symbol: symbol,
-        name: displayName,
+        name: displayName + ' (Demo)',
         price: demoData.price,
         change: demoData.change,
         changePercent: demoData.changePercent,
-        currency: "USD",
-        marketState: "DEMO",
+        currency: 'USD',
+        marketState: 'DEMO',
         lastUpdated: new Date().toLocaleTimeString(),
         chartData: demoData.chartData,
         timestamps: demoData.timestamps,
         error: null
       };
-    }
-    
-    this.render();
+    });
   }
 
   generateDemoData(symbol) {
