@@ -273,41 +273,41 @@ class YASCCard extends LitElement {
 
   renderSparkline() {
     if (!this.stockData.chartData || !this.stockData.timestamps) {
-      return html`<div class="sparkline-container"><div class="no-data">No chart</div></div>`;
+      return html`<div class="sparkline-container"><div class="no-data">—</div></div>`;
     }
 
     const prices = this.stockData.chartData.close || [];
     if (prices.length === 0) {
-      return html`<div class="sparkline-container"><div class="no-data">No data</div></div>`;
+      return html`<div class="sparkline-container"><div class="no-data">—</div></div>`;
     }
 
     const validPrices = prices.filter(p => p !== null && p !== undefined);
     if (validPrices.length === 0) {
-      return html`<div class="sparkline-container"><div class="no-data">No data</div></div>`;
+      return html`<div class="sparkline-container"><div class="no-data">—</div></div>`;
     }
 
     const minPrice = Math.min(...validPrices);
     const maxPrice = Math.max(...validPrices);
     const priceRange = maxPrice - minPrice || 1;
 
-    const chartPoints = prices.slice(-30).map((price, index) => {
-      if (price === null || price === undefined) return '';
-      const x = (index / 29) * 100;
-      const y = 100 - ((price - minPrice) / priceRange) * 100;
+    // Create more visible chart points - using the full 30 points
+    const chartPoints = validPrices.slice(-30).map((price, index) => {
+      const x = (index / (validPrices.slice(-30).length - 1)) * 100;
+      const y = 100 - ((price - minPrice) / priceRange) * 80 + 10; // Add 10% padding
       return `${x},${y}`;
-    }).filter(p => p).join(' ');
+    }).join(' ');
 
     const isPositive = validPrices[validPrices.length - 1] >= validPrices[0];
     const strokeColor = isPositive ? '#00C853' : '#FF5252';
 
     return html`
       <div class="sparkline-container">
-        <svg viewBox="0 0 100 30" class="sparkline">
+        <svg viewBox="0 0 100 100" class="sparkline">
           <polyline
             points="${chartPoints}"
             fill="none"
             stroke="${strokeColor}"
-            stroke-width="1.5"
+            stroke-width="2"
             vector-effect="non-scaling-stroke"
           />
         </svg>
@@ -364,21 +364,22 @@ class YASCCard extends LitElement {
 
       .sparkline-container {
         width: 80px;
-        height: 30px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
       .sparkline {
-        width: 80px;
-        height: 30px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 4px;
+        width: 76px;
+        height: 36px;
       }
 
       .no-data {
-        font-size: 10px;
+        font-size: 12px;
         color: var(--secondary-text-color, #666);
         text-align: center;
       }
