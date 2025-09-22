@@ -34,7 +34,7 @@ A modern, feature-rich Home Assistant Lovelace card for displaying live stock ma
 3. Click the three dots menu (⋮) in the top right corner
 4. Select "Custom repositories"
 5. Add the repository URL: `https://github.com/cnewman402/yasc`
-6. Select category: "Lovelace"
+6. Select category: "Dashboard"
 7. Click "ADD"
 8. Find "YASC - Yet Another Stock Card" in the Frontend section
 9. Click "Download" and then "Download" again to confirm
