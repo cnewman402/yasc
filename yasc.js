@@ -398,6 +398,9 @@ class YascEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (this.config) {
+      this.render();
+    }
   }
 
   get hass() {
@@ -424,7 +427,7 @@ class YascEditor extends HTMLElement {
     if (!configValue) return;
     
     let value;
-    if (target.type === 'checkbox') {
+    if (target.type === 'checkbox' || target.tagName === 'PAPER-TOGGLE-BUTTON') {
       value = target.checked;
     } else if (target.type === 'number') {
       value = target.value ? Number(target.value) : undefined;
@@ -605,8 +608,8 @@ class YascEditor extends HTMLElement {
 }
 
 // Register the custom elements
-if (!customElements.get('yasc')) {
-  customElements.define('yasc', YascCard);
+if (!customElements.get('yasc-card')) {
+  customElements.define('yasc-card', YascCard);
 }
 
 if (!customElements.get('yasc-editor')) {
@@ -616,7 +619,7 @@ if (!customElements.get('yasc-editor')) {
 // Register with Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'yasc',
+  type: 'yasc-card',
   name: 'YASC - Yet Another Stock Card',
   description: 'A customizable stock price tracking card with real-time updates',
   preview: true,
