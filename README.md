@@ -1,4 +1,4 @@
-# Yet Another Stock Card (yasc)
+# YASC - Yet Another Stock Card
 
 A customizable Lovelace card for Home Assistant that displays real-time stock prices with charts.
 
@@ -20,18 +20,18 @@ A customizable Lovelace card for Home Assistant that displays real-time stock pr
 1. Open HACS in your Home Assistant
 2. Go to "Frontend" section
 3. Click the "+" button
-4. Search for "Yet Another Stock Card"
+4. Search for "YASC" or "Yet Another Stock Card"
 5. Install the repository
 6. Add the resource to your Lovelace resources
 
 ### Manual Installation
 
-1. Download `yet-another-stock-card.js` from the [latest release](https://github.com/yourusername/yet-another-stock-card/releases)
-2. Copy it to `<config>/www/community/yet-another-stock-card/`
+1. Download `yasc.js` from the [latest release](https://github.com/yourusername/yasc/releases)
+2. Copy it to `<config>/www/community/yasc/`
 3. Add the resource to your Lovelace resources:
    ```yaml
    resources:
-     - url: /hacsfiles/yet-another-stock-card/yet-another-stock-card.js
+     - url: /hacsfiles/yasc/yasc.js
        type: module
    ```
 
