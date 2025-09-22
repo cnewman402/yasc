@@ -44,7 +44,7 @@ class YASCCard extends LitElement {
       symbol: config.symbol.toUpperCase(),
       name: config.name || config.symbol.toUpperCase(),
       update_interval: config.update_interval || 60,
-      show_chart: config.show_chart !== false,
+      show_chart: config.show_chart === true, // Explicitly check for true
       ...config
     };
 
@@ -223,7 +223,6 @@ class YASCCard extends LitElement {
           <div class="card-content error">
             <ha-icon icon="mdi:alert-circle"></ha-icon>
             <span>Error: ${this.stockData.error}</span>
-            <div class="symbol">${this.config.symbol}</div>
           </div>
         </ha-card>
       `;
@@ -241,38 +240,78 @@ class YASCCard extends LitElement {
 
     const isPositive = parseFloat(this.stockData.change) >= 0;
     const changeClass = isPositive ? "positive" : "negative";
-    const changeIcon = isPositive ? "mdi:trending-up" : "mdi:trending-down";
 
     return html`
       <ha-card>
-        <div class="card-content">
-          <div class="header">
-            <div class="title">
-              <span class="symbol">${this.stockData.symbol}</span>
-              <span class="name">${this.stockData.name}</span>
+        <div class="card-content compact-layout">
+          <div class="stock-row">
+            <div class="symbol-section">
+              <div class="symbol">${this.stockData.symbol}</div>
+              <div class="company-name">${this.stockData.name}</div>
             </div>
-            <div class="market-state ${this.stockData.marketState?.toLowerCase() || 'closed'}">
-              ${this.stockData.marketState === 'DEMO' ? '🎮 DEMO' : this.stockData.marketState || "CLOSED"}
+            
+            ${this.config.show_chart === true ? this.renderSparkline() : ""}
+            
+            <div class="price-data">
+              <div class="current-price">${this.stockData.price}</div>
+              <div class="change-data ${changeClass}">
+                <span class="change-amount">${this.stockData.change}</span>
+                <span class="change-percent">${this.stockData.changePercent}%</span>
+              </div>
+            </div>
+            
+            <div class="market-badge ${this.stockData.marketState?.toLowerCase() || 'closed'}">
+              ${this.stockData.marketState === 'DEMO' ? 'DEMO' : this.stockData.marketState || "CLOSED"}
             </div>
           </div>
-
-          <div class="price-section">
-            <div class="current-price">
-              ${this.stockData.currency} ${this.stockData.price}
-            </div>
-            <div class="change ${changeClass}">
-              <ha-icon icon="${changeIcon}"></ha-icon>
-              <span>${this.stockData.change} (${this.stockData.changePercent}%)</span>
-            </div>
-          </div>
-
-          ${this.config.show_chart ? this.renderChart() : ""}
-
-          <div class="footer">
-            <span class="updated">Updated: ${this.stockData.lastUpdated}</span>
-          </div>
+          
+          <div class="updated-time">Updated: ${this.stockData.lastUpdated}</div>
         </div>
       </ha-card>
+    `;
+  }
+
+  renderSparkline() {
+    if (!this.stockData.chartData || !this.stockData.timestamps) {
+      return html`<div class="sparkline-container"><div class="no-data">No chart</div></div>`;
+    }
+
+    const prices = this.stockData.chartData.close || [];
+    if (prices.length === 0) {
+      return html`<div class="sparkline-container"><div class="no-data">No data</div></div>`;
+    }
+
+    const validPrices = prices.filter(p => p !== null && p !== undefined);
+    if (validPrices.length === 0) {
+      return html`<div class="sparkline-container"><div class="no-data">No data</div></div>`;
+    }
+
+    const minPrice = Math.min(...validPrices);
+    const maxPrice = Math.max(...validPrices);
+    const priceRange = maxPrice - minPrice || 1;
+
+    const chartPoints = prices.slice(-30).map((price, index) => {
+      if (price === null || price === undefined) return '';
+      const x = (index / 29) * 100;
+      const y = 100 - ((price - minPrice) / priceRange) * 100;
+      return `${x},${y}`;
+    }).filter(p => p).join(' ');
+
+    const isPositive = validPrices[validPrices.length - 1] >= validPrices[0];
+    const strokeColor = isPositive ? '#00C853' : '#FF5252';
+
+    return html`
+      <div class="sparkline-container">
+        <svg viewBox="0 0 100 30" class="sparkline">
+          <polyline
+            points="${chartPoints}"
+            fill="none"
+            stroke="${strokeColor}"
+            stroke-width="1.5"
+            vector-effect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
     `;
   }
 
@@ -283,153 +322,194 @@ class YASCCard extends LitElement {
       }
 
       .card-content {
-        padding: 16px;
+        padding: 0;
+        background: var(--card-background-color, #1e1e1e);
+        color: var(--primary-text-color, #ffffff);
       }
 
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
+      .compact-layout {
+        padding: 12px 16px;
+        border-radius: var(--ha-card-border-radius, 8px);
       }
 
-      .title {
+      .stock-row {
+        display: grid;
+        grid-template-columns: 120px 1fr auto auto;
+        gap: 16px;
+        align-items: center;
+        min-height: 44px;
+      }
+
+      .symbol-section {
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
 
       .symbol {
-        font-size: 1.2em;
-        font-weight: 500;
-        color: var(--primary-text-color);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--primary-text-color, #ffffff);
+        letter-spacing: 0.5px;
       }
 
-      .name {
-        font-size: 0.9em;
-        color: var(--secondary-text-color);
+      .company-name {
+        font-size: 12px;
+        color: var(--secondary-text-color, #a0a0a0);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
       }
 
-      .market-state {
-        font-size: 0.8em;
-        padding: 2px 6px;
+      .sparkline-container {
+        width: 80px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .sparkline {
+        width: 80px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.05);
         border-radius: 4px;
-        text-transform: uppercase;
-        font-weight: 500;
       }
 
-      .market-state.regular {
-        background: #4caf50;
-        color: white;
+      .no-data {
+        font-size: 10px;
+        color: var(--secondary-text-color, #666);
+        text-align: center;
       }
 
-      .market-state.closed,
-      .market-state.prepre,
-      .market-state.postpost {
-        background: var(--divider-color);
-        color: var(--secondary-text-color);
-      }
-
-      .price-section {
-        margin: 16px 0;
+      .price-data {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        min-width: 80px;
       }
 
       .current-price {
-        font-size: 2em;
-        font-weight: 300;
-        color: var(--primary-text-color);
-        margin-bottom: 4px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary-text-color, #ffffff);
+        font-variant-numeric: tabular-nums;
       }
 
-      .change {
+      .change-data {
         display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 1.1em;
+        gap: 6px;
+        font-size: 12px;
         font-weight: 500;
+        font-variant-numeric: tabular-nums;
       }
 
-      .change.positive {
-        color: #4caf50;
+      .change-data.positive {
+        color: #00C853;
       }
 
-      .change.negative {
-        color: #f44336;
+      .change-data.negative {
+        color: #FF5252;
       }
 
-      .chart {
-        margin: 16px 0;
-        height: 80px;
-        background: var(--secondary-background-color);
-        border-radius: 4px;
-        padding: 8px;
+      .change-amount::before {
+        content: attr(data-sign);
       }
 
-      .chart-svg {
-        width: 100%;
-        height: 100%;
+      .change-percent {
+        opacity: 0.9;
       }
 
-      .chart-placeholder {
+      .market-badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 3px 6px;
+        border-radius: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 40px;
         text-align: center;
-        color: var(--secondary-text-color);
-        font-style: italic;
-        padding: 20px;
-        font-size: 0.9em;
       }
 
-      .footer {
+      .market-badge.regular {
+        background: rgba(0, 200, 83, 0.2);
+        color: #00C853;
+        border: 1px solid rgba(0, 200, 83, 0.3);
+      }
+
+      .market-badge.demo {
+        background: rgba(255, 193, 7, 0.2);
+        color: #FFC107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+      }
+
+      .market-badge.closed {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+        border: 1px solid rgba(158, 158, 158, 0.3);
+      }
+
+      .updated-time {
         text-align: right;
-        margin-top: 12px;
-      }
-
-      .updated {
-        font-size: 0.8em;
-        color: var(--secondary-text-color);
+        font-size: 10px;
+        color: var(--secondary-text-color, #666);
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
       }
 
       .error {
+        padding: 16px;
+        text-align: center;
+        color: var(--error-color, #FF5252);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 8px;
-        color: var(--error-color);
-        justify-content: center;
-        padding: 20px;
-        text-align: center;
       }
 
       .loading {
+        padding: 16px;
         text-align: center;
-        color: var(--secondary-text-color);
-        padding: 20px;
+        color: var(--secondary-text-color, #666);
       }
 
-      ha-icon {
-        --mdc-icon-size: 16px;
-      }
-
-      .change ha-icon {
-        --mdc-icon-size: 20px;
-      }
-
-      .error ha-icon {
-        --mdc-icon-size: 24px;
-      }
-
+      /* Mobile responsiveness */
       @media (max-width: 480px) {
-        .current-price {
-          font-size: 1.6em;
-        }
-
-        .header {
-          flex-direction: column;
+        .stock-row {
+          grid-template-columns: 100px 60px 1fr auto;
           gap: 8px;
         }
 
-        .market-state {
-          align-self: flex-start;
+        .symbol-section {
+          min-width: 100px;
         }
+
+        .sparkline-container {
+          width: 60px;
+        }
+
+        .sparkline {
+          width: 60px;
+        }
+
+        .current-price {
+          font-size: 14px;
+        }
+
+        .change-data {
+          font-size: 11px;
+          flex-direction: column;
+          gap: 1px;
+        }
+      }
+
+      /* Dark theme optimizations */
+      ha-card {
+        background: var(--card-background-color, #1e1e1e);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
     `;
   }
