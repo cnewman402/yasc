@@ -254,7 +254,7 @@ class YetAnotherStockCard extends HTMLElement {
   }
 
   getStyles() {
-    return '.card-content{padding:0;background:var(--card-background-color,#1e1e1e);color:var(--primary-text-color,#ffffff)}.multi-stock-layout{padding:0}.stocks-container{display:flex;flex-direction:column}.stock-row{display:grid;grid-template-columns:120px 80px 1fr auto;gap:16px;align-items:center;min-height:44px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}.stock-row:last-child{border-bottom:none}.stock-row:hover{background:rgba(255,255,255,0.02)}.symbol-section{display:flex;flex-direction:column;gap:2px}.symbol{font-size:14px;font-weight:600;color:var(--primary-text-color,#ffffff);letter-spacing:0.5px}.company-name{font-size:12px;color:var(--secondary-text-color,#a0a0a0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}.sparkline-container{width:80px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border-radius:4px;border:1px solid rgba(255,255,255,0.1)}.sparkline{width:76px;height:36px}.sparkline-placeholder{width:80px;height:40px}.no-data{font-size:12px;color:var(--secondary-text-color,#666);text-align:center}.price-data{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:80px}.current-price{font-size:16px;font-weight:600;color:var(--primary-text-color,#ffffff);font-variant-numeric:tabular-nums}.change-data{display:flex;gap:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}.change-data.positive{color:#00C853}.change-data.negative{color:#FF5252}.change-percent{opacity:0.9}.market-badge{font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:0.5px;min-width:40px;text-align:center}.market-badge.demo{background:rgba(255,193,7,0.2);color:#FFC107;border:1px solid rgba(255,193,7,0.3)}.updated-time{text-align:right;font-size:10px;color:var(--secondary-text-color,#666);margin-top:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1)}.loading{padding:16px;text-align:center;color:var(--secondary-text-color,#666)}';
+    return '.card-content{padding:0;background:var(--card-background-color,#1e1e1e);color:var(--primary-text-color,#ffffff)}.multi-stock-layout{padding:0}.stocks-container{display:flex;flex-direction:column}.stock-row{display:grid;grid-template-columns:120px 80px 1fr auto;gap:16px;align-items:center;min-height:44px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}.stock-row:last-child{border-bottom:none}.stock-row:hover{background:rgba(255,255,255,0.02)}.symbol-section{display:flex;flex-direction:column;gap:2px}.symbol{font-size:14px;font-weight:600;color:var(--primary-text-color,#ffffff);letter-spacing:0.5px}.company-name{font-size:12px;color:var(--secondary-text-color,#a0a0a0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}.sparkline-container{width:80px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border-radius:4px;border:1px solid rgba(255,255,255,0.1);overflow:hidden}.sparkline{width:76px;height:36px;max-width:76px;max-height:36px}.sparkline-placeholder{width:80px;height:40px}.no-data{font-size:12px;color:var(--secondary-text-color,#666);text-align:center}.price-data{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:80px}.current-price{font-size:16px;font-weight:600;color:var(--primary-text-color,#ffffff);font-variant-numeric:tabular-nums}.change-data{display:flex;gap:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}.change-data.positive{color:#00C853}.change-data.negative{color:#FF5252}.change-percent{opacity:0.9}.market-badge{font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:0.5px;min-width:40px;text-align:center}.market-badge.demo{background:rgba(255,193,7,0.2);color:#FFC107;border:1px solid rgba(255,193,7,0.3)}.updated-time{text-align:right;font-size:10px;color:var(--secondary-text-color,#666);margin-top:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1)}.loading{padding:16px;text-align:center;color:var(--secondary-text-color,#666)}';
   }
 
   getCardSize() {
@@ -326,18 +326,18 @@ class YascCardEditor extends HTMLElement {
     html += '<label style="font-weight: 500;"><input type="checkbox" id="show_chart" ' + (this._config.show_chart === true ? 'checked' : '') + ' style="margin-right: 8px;"> Show Sparkline Charts</label>';
     html += '</div>';
     
-    html += '<div style="background: #e8f5e8; padding: 12px; border-radius: 4px; margin-top: 16px;">';
-    html += '<strong>Popular Symbols - Click to Add:</strong>';
+    html += '<div style="background: var(--secondary-background-color, #2c2c2c); padding: 12px; border-radius: 4px; margin-top: 16px; border: 1px solid var(--divider-color, #555);">';
+    html += '<strong style="color: var(--primary-text-color, #ffffff);">Popular Symbols - Click to Add:</strong>';
     html += '<div style="margin: 8px 0; display: flex; flex-wrap: wrap; gap: 4px;">';
     
     var popularSymbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'NVDA', 'META', 'BTC-USD', 'ETH-USD'];
     for (var i = 0; i < popularSymbols.length; i++) {
       var sym = popularSymbols[i];
-      html += '<button type="button" class="symbol-suggestion" data-symbol="' + sym + '" style="background: #f0f0f0; border: 1px solid #ddd; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; margin: 2px; transition: background 0.2s;">' + sym + '</button>';
+      html += '<button type="button" class="symbol-suggestion" data-symbol="' + sym + '" style="background: var(--primary-background-color, #3c3c3c); color: var(--primary-text-color, #ffffff); border: 1px solid var(--divider-color, #555); padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 2px; transition: background 0.2s; font-weight: 500;">' + sym + '</button>';
     }
     
     html += '</div>';
-    html += '<div style="font-size: 11px; color: #666;">Click any symbol above to add it quickly to your watchlist</div>';
+    html += '<div style="font-size: 11px; color: var(--secondary-text-color, #aaa);">Click any symbol above to add it quickly to your watchlist</div>';
     html += '</div>';
     
     html += '</div>';
@@ -348,10 +348,10 @@ class YascCardEditor extends HTMLElement {
 
   renderSymbolRow(symbol, name, index) {
     var isOnlySymbol = (this._config.symbols || ['AAPL']).length === 1;
-    return '<div class="symbol-row" style="display: grid; grid-template-columns: 120px 1fr 40px; gap: 8px; align-items: center; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #e0e0e0;">' +
-           '<input type="text" class="symbol-input" data-index="' + index + '" value="' + symbol + '" placeholder="SYMBOL" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase; font-weight: 600; font-size: 13px;">' +
-           '<input type="text" class="name-input" data-index="' + index + '" value="' + name + '" placeholder="Company name (optional)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">' +
-           '<button type="button" class="remove-symbol" data-index="' + index + '" style="background: ' + (isOnlySymbol ? '#ccc' : '#f44336') + '; color: white; border: none; padding: 8px; border-radius: 4px; cursor: ' + (isOnlySymbol ? 'not-allowed' : 'pointer') + '; font-size: 14px; font-weight: bold; transition: background 0.2s;" ' + (isOnlySymbol ? 'disabled title="Cannot remove last symbol"' : '') + '>×</button>' +
+    return '<div class="symbol-row" style="display: grid; grid-template-columns: 120px 1fr 40px; gap: 8px; align-items: center; padding: 12px; background: var(--card-background-color, #2c2c2c); border-radius: 6px; border: 1px solid var(--divider-color, #555);">' +
+           '<input type="text" class="symbol-input" data-index="' + index + '" value="' + symbol + '" placeholder="SYMBOL" style="padding: 8px; border: 1px solid var(--divider-color, #555); border-radius: 4px; text-transform: uppercase; font-weight: 600; font-size: 13px; background: var(--primary-background-color, #1e1e1e); color: var(--primary-text-color, #ffffff);">' +
+           '<input type="text" class="name-input" data-index="' + index + '" value="' + name + '" placeholder="Company name (optional)" style="padding: 8px; border: 1px solid var(--divider-color, #555); border-radius: 4px; font-size: 13px; background: var(--primary-background-color, #1e1e1e); color: var(--primary-text-color, #ffffff);">' +
+           '<button type="button" class="remove-symbol" data-index="' + index + '" style="background: ' + (isOnlySymbol ? '#666' : '#f44336') + '; color: white; border: none; padding: 8px; border-radius: 4px; cursor: ' + (isOnlySymbol ? 'not-allowed' : 'pointer') + '; font-size: 14px; font-weight: bold; transition: background 0.2s;" ' + (isOnlySymbol ? 'disabled title="Cannot remove last symbol"' : '') + '>×</button>' +
            '</div>';
   }
 
@@ -373,10 +373,12 @@ class YascCardEditor extends HTMLElement {
         self.addSymbol(symbol);
       });
       button.addEventListener('mouseenter', function() {
-        this.style.background = '#e0e0e0';
+        this.style.background = 'var(--primary-color, #03a9f4)';
+        this.style.color = '#ffffff';
       });
       button.addEventListener('mouseleave', function() {
-        this.style.background = '#f0f0f0';
+        this.style.background = 'var(--primary-background-color, #3c3c3c)';
+        this.style.color = 'var(--primary-text-color, #ffffff)';
       });
     }
 
