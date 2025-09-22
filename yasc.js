@@ -449,7 +449,7 @@ class YASCCardEditor extends LitElement {
   }
 
   setConfig(config) {
-    this.config = config;
+    this.config = { ...config };
   }
 
   configChanged(newConfig) {
@@ -461,7 +461,7 @@ class YASCCardEditor extends LitElement {
     this.dispatchEvent(event);
   }
 
-  valueChanged(ev) {
+  _valueChanged(ev) {
     if (!this.config || !this.hass) {
       return;
     }
@@ -472,21 +472,24 @@ class YASCCardEditor extends LitElement {
     if (!configValue) return;
 
     let value;
-    if (target.type === "checkbox") {
+    if (target.hasAttribute('checked')) {
       value = target.checked;
-    } else if (target.type === "number") {
-      value = target.value ? Number(target.value) : undefined;
+    } else if (target.type === 'number') {
+      value = target.value ? Number(target.value) : 60;
     } else {
-      value = target.value;
-    }
-
-    if (this.config[configValue] === value) {
-      return;
+      value = target.value || '';
     }
 
     const newConfig = { ...this.config };
-    if (value === "" || value == null || value === undefined) {
-      delete newConfig[configValue];
+    if (value === '' && configValue !== 'name') {
+      // Don't delete required fields, set defaults instead
+      if (configValue === 'symbol') {
+        newConfig[configValue] = 'AAPL';
+      } else if (configValue === 'update_interval') {
+        newConfig[configValue] = 60;
+      } else {
+        delete newConfig[configValue];
+      }
     } else {
       newConfig[configValue] = value;
     }
@@ -502,52 +505,56 @@ class YASCCardEditor extends LitElement {
     return html`
       <div class="card-config">
         <div class="section-header">Stock Information</div>
-        <div class="config-group">
-          <paper-input
-            label="Stock Symbol (Required)"
-            .value="${this.config.symbol || ""}"
-            .configValue="${"symbol"}"
-            @value-changed="${this.valueChanged}"
+        <div class="config-row">
+          <ha-textfield
+            label="Stock Symbol"
+            .value="${this.config.symbol || 'AAPL'}"
+            .configValue="${'symbol'}"
+            @input="${this._valueChanged}"
             required
-          ></paper-input>
-          <div class="help-text">Ticker symbol (e.g., AAPL, GOOGL, TSLA)</div>
+          ></ha-textfield>
+          <div class="help-text">Required: Ticker symbol (e.g., AAPL, GOOGL, TSLA)</div>
+        </div>
 
-          <paper-input
-            label="Display Name (Optional)"
-            .value="${this.config.name || ""}"
-            .configValue="${"name"}"
-            @value-changed="${this.valueChanged}"
-          ></paper-input>
-          <div class="help-text">Custom name to display</div>
+        <div class="config-row">
+          <ha-textfield
+            label="Display Name"
+            .value="${this.config.name || ''}"
+            .configValue="${'name'}"
+            @input="${this._valueChanged}"
+          ></ha-textfield>
+          <div class="help-text">Optional: Custom name to display</div>
         </div>
 
         <div class="section-header">Settings</div>
-        <div class="config-group">
-          <paper-input
+        <div class="config-row">
+          <ha-textfield
             label="Update Interval (seconds)"
             .value="${this.config.update_interval || 60}"
-            .configValue="${"update_interval"}"
+            .configValue="${'update_interval'}"
             type="number"
             min="10"
             max="3600"
-            @value-changed="${this.valueChanged}"
-          ></paper-input>
+            @input="${this._valueChanged}"
+          ></ha-textfield>
           <div class="help-text">How often to refresh data (10-3600 seconds)</div>
+        </div>
 
+        <div class="config-row">
           <ha-formfield label="Show Chart">
-            <ha-switch
+            <ha-checkbox
               .checked="${this.config.show_chart !== false}"
-              .configValue="${"show_chart"}"
-              @change="${this.valueChanged}"
-            ></ha-switch>
+              .configValue="${'show_chart'}"
+              @change="${this._valueChanged}"
+            ></ha-checkbox>
           </ha-formfield>
         </div>
 
         <div class="section-header">Demo Mode</div>
-        <div class="config-group">
+        <div class="config-row">
           <div class="help-text">
-            This card currently runs in demo mode with realistic sample data.<br/>
-            <strong>Popular Symbols:</strong><br/>
+            This card runs in demo mode with realistic sample data.<br/>
+            <strong>Popular Symbols to try:</strong><br/>
             <strong>US Stocks:</strong> AAPL, GOOGL, MSFT, TSLA, AMZN, NVDA, META<br />
             <strong>Crypto:</strong> BTC-USD, ETH-USD, ADA-USD<br />
             <strong>Indices:</strong> ^GSPC (S&P 500), ^DJI (Dow Jones)
@@ -575,25 +582,29 @@ class YASCCardEditor extends LitElement {
         padding-bottom: 4px;
       }
 
-      .config-group {
+      .config-row {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 4px;
+        margin-bottom: 16px;
       }
 
       .help-text {
         font-size: 0.85em;
         color: var(--secondary-text-color);
         font-style: italic;
-        margin-top: 4px;
       }
 
-      paper-input {
+      ha-textfield {
         width: 100%;
       }
 
       ha-formfield {
         margin: 8px 0;
+      }
+
+      ha-checkbox {
+        margin-left: 8px;
       }
     `;
   }
