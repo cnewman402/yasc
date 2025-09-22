@@ -1,13 +1,9 @@
 {
-  "name": "YASC - Yet Another Stock Card",
-  "hacs": "1.6.0",
-  "domains": ["lovelace"],
-  "iot_class": "Cloud Polling",
+  "name": "YAWC - Yet Another Weather Card",
+  "content_in_root": true,
+  "filename": "yasc.js",
+  "country": ["US"],
   "homeassistant": "2023.1.0",
   "render_readme": true,
-  "country": ["ALL"],
-  "content_in_root": false,
-  "filename": "yasc.js",
-  "zip_release": false,
-  "hide_default_branch": false
+  "iot_class": "Cloud Polling"
 }
