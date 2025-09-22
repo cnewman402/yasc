@@ -28,26 +28,38 @@ class YASCCard extends LitElement {
 
   static getStubConfig() {
     return {
-      symbol: "AAPL",
-      name: "Apple Inc.",
+      symbols: ['AAPL', 'GOOGL', 'MSFT'],
+      names: ['Apple Inc.', 'Alphabet Inc.', 'Microsoft Corp.'],
       update_interval: 60,
       show_chart: true
     };
   }
 
   setConfig(config) {
-    if (!config.symbol) {
-      throw new Error("You need to define a stock symbol");
+    // Support both single symbol (backwards compatibility) and symbols array
+    if (config.symbol && !config.symbols) {
+      // Convert single symbol to array format
+      this.config = {
+        symbols: [config.symbol.toUpperCase()],
+        names: [config.name || config.symbol.toUpperCase()],
+        update_interval: config.update_interval || 60,
+        show_chart: config.show_chart === true,
+        ...config
+      };
+    } else if (config.symbols) {
+      // Use array format
+      this.config = {
+        symbols: config.symbols.map(s => s.toUpperCase()),
+        names: config.names || config.symbols.map(s => s.toUpperCase()),
+        update_interval: config.update_interval || 60,
+        show_chart: config.show_chart === true,
+        ...config
+      };
+    } else {
+      throw new Error("You need to define either 'symbol' or 'symbols' array");
     }
 
-    this.config = {
-      symbol: config.symbol.toUpperCase(),
-      name: config.name || config.symbol.toUpperCase(),
-      update_interval: config.update_interval || 60,
-      show_chart: config.show_chart === true, // Explicitly check for true
-      ...config
-    };
-
+    this.stocksData = {}; // Will hold data for multiple stocks
     this.startUpdating();
   }
 
@@ -68,18 +80,54 @@ class YASCCard extends LitElement {
 
   async fetchStockData() {
     try {
-      const symbol = this.config.symbol;
+      // Fetch data for all symbols
+      const symbols = this.config.symbols;
+      const promises = symbols.map(symbol => this.fetchSingleStock(symbol));
+      const results = await Promise.all(promises);
       
-      // Skip API calls entirely and go straight to demo mode
-      // This eliminates all CORS and API key issues
+      // Store all stock data
+      this.stocksData = {};
+      symbols.forEach((symbol, index) => {
+        this.stocksData[symbol] = results[index];
+      });
+      
+      this.requestUpdate();
+      
+    } catch (error) {
+      console.error("Error fetching stocks data:", error);
+      // Set error state for all stocks
+      this.stocksData = {};
+      this.config.symbols.forEach(symbol => {
+        this.stocksData[symbol] = {
+          symbol: symbol,
+          name: this.config.names[this.config.symbols.indexOf(symbol)] || symbol,
+          price: "Error",
+          change: "0.00",
+          changePercent: "0.00",
+          currency: "USD",
+          marketState: "ERROR",
+          lastUpdated: new Date().toLocaleTimeString(),
+          chartData: null,
+          timestamps: null,
+          error: "Failed to fetch data"
+        };
+      });
+      this.requestUpdate();
+    }
+  }
+
+  async fetchSingleStock(symbol) {
+    try {
       console.log("Using demo data for", symbol);
       
       // Generate realistic demo data based on the symbol
-      const demoData = this.generateDemoData();
+      const demoData = this.generateDemoData(symbol);
+      const nameIndex = this.config.symbols.indexOf(symbol);
+      const displayName = this.config.names[nameIndex] || symbol;
       
-      this.stockData = {
-        symbol: this.config.symbol,
-        name: this.config.name,
+      return {
+        symbol: symbol,
+        name: displayName,
         price: demoData.price,
         change: demoData.change,
         changePercent: demoData.changePercent,
@@ -90,18 +138,19 @@ class YASCCard extends LitElement {
         timestamps: demoData.timestamps,
         error: null
       };
-      this.requestUpdate();
       
     } catch (error) {
-      console.error("Error in demo data generation:", error);
+      console.error(`Error fetching data for ${symbol}:`, error);
       
-      // Fallback to simple static demo
-      this.stockData = {
-        symbol: this.config.symbol,
-        name: this.config.name,
-        price: "185.42",
-        change: "2.35",
-        changePercent: "1.29",
+      const nameIndex = this.config.symbols.indexOf(symbol);
+      const displayName = this.config.names[nameIndex] || symbol;
+      
+      return {
+        symbol: symbol,
+        name: displayName,
+        price: "123.45",
+        change: "1.23",
+        changePercent: "1.01",
         currency: "USD",
         marketState: "DEMO",
         lastUpdated: new Date().toLocaleTimeString(),
@@ -109,38 +158,39 @@ class YASCCard extends LitElement {
         timestamps: null,
         error: null
       };
-      this.requestUpdate();
     }
   }
 
-  generateDemoData() {
-    const symbol = this.config.symbol;
-    
+  generateDemoData(symbol) {
     // Generate somewhat realistic demo data based on symbol
     const basePrice = symbol === 'AAPL' ? 185.00 : 
                      symbol === 'GOOGL' ? 140.00 :
                      symbol === 'MSFT' ? 410.00 :
                      symbol === 'TSLA' ? 245.00 :
-                     symbol === 'AMZN' ? 155.00 : 100.00;
+                     symbol === 'AMZN' ? 155.00 :
+                     symbol === 'NVDA' ? 880.00 :
+                     symbol === 'META' ? 325.00 : 100.00;
     
-    // Add some random variation (±3%)
-    const variation = (Math.random() - 0.5) * 0.06;
+    // Add some random variation (±3%) with symbol-based seed for consistency
+    const seed = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const pseudoRandom = (seed * 9301 + 49297) % 233280 / 233280;
+    const variation = (pseudoRandom - 0.5) * 0.06;
     const price = basePrice * (1 + variation);
     const previousClose = basePrice;
     const change = price - previousClose;
     const changePercent = (change / previousClose) * 100;
     
-    // Generate simple chart data (50 points showing slight upward trend)
+    // Generate simple chart data (30 points showing trend)
     const chartData = {
-      close: Array.from({length: 50}, (_, i) => {
-        const trend = i * 0.1; // slight upward trend
-        const noise = (Math.random() - 0.5) * 2; // random noise
+      close: Array.from({length: 30}, (_, i) => {
+        const trend = change > 0 ? i * 0.2 : i * -0.1; // Trend based on direction
+        const noise = (((seed + i) * 9301 + 49297) % 233280 / 233280 - 0.5) * 4; // Consistent noise
         return basePrice + trend + noise;
       })
     };
     
-    const timestamps = Array.from({length: 50}, (_, i) => 
-      Date.now() - (50 - i) * 60000 // Last 50 minutes
+    const timestamps = Array.from({length: 30}, (_, i) => 
+      Date.now() - (30 - i) * 120000 // Last 60 minutes
     );
     
     return {
@@ -217,66 +267,97 @@ class YASCCard extends LitElement {
       return html`<div class="error">Invalid configuration</div>`;
     }
 
-    if (this.stockData.error) {
-      return html`
-        <ha-card>
-          <div class="card-content error">
-            <ha-icon icon="mdi:alert-circle"></ha-icon>
-            <span>Error: ${this.stockData.error}</span>
-          </div>
-        </ha-card>
-      `;
-    }
-
-    if (!this.stockData.price) {
+    if (!this.stocksData || Object.keys(this.stocksData).length === 0) {
       return html`
         <ha-card>
           <div class="card-content">
-            <div class="loading">Loading ${this.config.symbol}...</div>
+            <div class="loading">Loading ${this.config.symbols?.length || 0} stocks...</div>
           </div>
         </ha-card>
       `;
     }
 
-    const isPositive = parseFloat(this.stockData.change) >= 0;
-    const changeClass = isPositive ? "positive" : "negative";
-
-    return html`
-      <ha-card>
-        <div class="card-content compact-layout">
+    const stockRows = this.config.symbols.map(symbol => {
+      const stockData = this.stocksData[symbol];
+      if (!stockData) {
+        return html`
           <div class="stock-row">
             <div class="symbol-section">
-              <div class="symbol">${this.stockData.symbol}</div>
-              <div class="company-name">${this.stockData.name}</div>
+              <div class="symbol">${symbol}</div>
+              <div class="company-name">Loading...</div>
             </div>
-            
-            ${this.config.show_chart === true ? this.renderSparkline() : ""}
-            
+            <div class="sparkline-container"><div class="no-data">—</div></div>
             <div class="price-data">
-              <div class="current-price">${this.stockData.price}</div>
-              <div class="change-data ${changeClass}">
-                <span class="change-amount">${this.stockData.change}</span>
-                <span class="change-percent">${this.stockData.changePercent}%</span>
-              </div>
+              <div class="current-price">—</div>
+              <div class="change-data">—</div>
             </div>
-            
-            <div class="market-badge ${this.stockData.marketState?.toLowerCase() || 'closed'}">
-              ${this.stockData.marketState === 'DEMO' ? 'DEMO' : this.stockData.marketState || "CLOSED"}
+            <div class="market-badge loading">LOADING</div>
+          </div>
+        `;
+      }
+
+      if (stockData.error) {
+        return html`
+          <div class="stock-row error-row">
+            <div class="symbol-section">
+              <div class="symbol">${stockData.symbol}</div>
+              <div class="company-name">Error</div>
+            </div>
+            <div class="sparkline-container"><div class="no-data">✗</div></div>
+            <div class="price-data">
+              <div class="current-price">—</div>
+              <div class="change-data error">Error</div>
+            </div>
+            <div class="market-badge error">ERROR</div>
+          </div>
+        `;
+      }
+
+      const isPositive = parseFloat(stockData.change) >= 0;
+      const changeClass = isPositive ? "positive" : "negative";
+
+      return html`
+        <div class="stock-row">
+          <div class="symbol-section">
+            <div class="symbol">${stockData.symbol}</div>
+            <div class="company-name">${stockData.name}</div>
+          </div>
+          
+          ${this.config.show_chart === true ? this.renderSparkline(stockData) : html`<div class="sparkline-placeholder"></div>`}
+          
+          <div class="price-data">
+            <div class="current-price">${stockData.price}</div>
+            <div class="change-data ${changeClass}">
+              <span class="change-amount">${isPositive ? '+' : ''}${stockData.change}</span>
+              <span class="change-percent">${isPositive ? '+' : ''}${stockData.changePercent}%</span>
             </div>
           </div>
           
-          <div class="updated-time">Updated: ${this.stockData.lastUpdated}</div>
+          <div class="market-badge ${stockData.marketState?.toLowerCase() || 'closed'}">
+            ${stockData.marketState === 'DEMO' ? 'DEMO' : stockData.marketState || "CLOSED"}
+          </div>
+        </div>
+      `;
+    });
+
+    return html`
+      <ha-card>
+        <div class="card-content multi-stock-layout">
+          <div class="stocks-container">
+            ${stockRows}
+          </div>
+          <div class="updated-time">Updated: ${Object.values(this.stocksData)[0]?.lastUpdated || 'Unknown'}</div>
         </div>
       </ha-card>
     `;
   }
 
-  renderSparkline() {
-    if (!this.stockData.chartData || !this.stockData.timestamps) {
+  renderSparkline(stockData) {
+    if (!stockData.chartData || !stockData.timestamps) {
       return html`<div class="sparkline-container"><div class="no-data">—</div></div>`;
     }
 
-    const prices = this.stockData.chartData.close || [];
+    const prices = stockData.chartData.close || [];
     if (prices.length === 0) {
       return html`<div class="sparkline-container"><div class="no-data">—</div></div>`;
     }
@@ -327,17 +408,38 @@ class YASCCard extends LitElement {
         color: var(--primary-text-color, #ffffff);
       }
 
-      .compact-layout {
-        padding: 12px 16px;
-        border-radius: var(--ha-card-border-radius, 8px);
+      .multi-stock-layout {
+        padding: 0;
+        background: var(--card-background-color, #1e1e1e);
+        color: var(--primary-text-color, #ffffff);
+      }
+
+      .stocks-container {
+        display: flex;
+        flex-direction: column;
       }
 
       .stock-row {
         display: grid;
-        grid-template-columns: 120px 1fr auto auto;
+        grid-template-columns: 120px 80px 1fr auto;
         gap: 16px;
         align-items: center;
         min-height: 44px;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .stock-row:last-child {
+        border-bottom: none;
+      }
+
+      .stock-row:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .sparkline-placeholder {
+        width: 80px;
+        height: 40px;
       }
 
       .symbol-section {
