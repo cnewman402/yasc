@@ -1,4 +1,8 @@
-console.log('YASC v1.4.0 - Complete Implementation with Blur Update Fix');
+console.log(
+  '%c 💰 YASC v1.5.0 - Live Stock Data %c',
+  'background: linear-gradient(90deg, #4CAF50, #2E7D32); color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);',
+  'background: transparent;'
+);
 
 class YetAnotherStockCard extends HTMLElement {
   constructor() {
@@ -624,4 +628,8 @@ window.customCards.push({
   documentationURL: 'https://github.com/yourusername/yasc'
 });
 
-console.log('YASC v1.4.0 - Complete Implementation with Blur Update Fix Loaded Successfully!');
+console.log(
+  '%c 💰 YASC v1.5.0 - Ready! Live stock data active 📈 %c',
+  'background: linear-gradient(90deg, #4CAF50, #2E7D32); color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);',
+  'background: transparent;'
+);
