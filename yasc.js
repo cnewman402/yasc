@@ -69,53 +69,130 @@ class YASCCard extends LitElement {
   async fetchStockData() {
     try {
       const symbol = this.config.symbol;
-      const response = await fetch(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`,
-        {
-          method: "GET",
-          headers: {
-            "User-Agent": "Mozilla/5.0 (compatible; YASC/1.0)"
+      
+      // Try multiple endpoints for better reliability
+      const endpoints = [
+        // Free proxy service for Yahoo Finance
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`)}`,
+        // Backup: Direct Yahoo Finance with no-cors mode (limited data)
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`,
+        // Fallback: Yahoo Finance search endpoint
+        `https://query2.finance.yahoo.com/v1/finance/search?q=${symbol}`
+      ];
+
+      let data = null;
+      let usedEndpoint = 0;
+
+      // Try each endpoint until one works
+      for (let i = 0; i < endpoints.length; i++) {
+        try {
+          const response = await fetch(endpoints[i], {
+            method: "GET",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            },
+            mode: i === 0 ? "cors" : "no-cors"
+          });
+
+          if (response.ok) {
+            const responseData = await response.json();
+            if (responseData && (responseData.chart || responseData.quoteResponse || responseData.quotes)) {
+              data = responseData;
+              usedEndpoint = i;
+              break;
+            }
           }
+        } catch (endpointError) {
+          console.log(`Endpoint ${i} failed:`, endpointError);
+          continue;
         }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-
-      if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
-        throw new Error("No data available for this symbol");
+      if (!data) {
+        throw new Error("All API endpoints failed. Please check your internet connection and try again.");
       }
 
-      const result = data.chart.result[0];
-      const meta = result.meta;
-      const currentPrice = meta.regularMarketPrice;
-      const previousClose = meta.previousClose;
-      const change = currentPrice - previousClose;
-      const changePercent = (change / previousClose) * 100;
+      // Parse data based on which endpoint worked
+      let stockInfo;
+      
+      if (usedEndpoint === 0 && data.chart && data.chart.result && data.chart.result.length > 0) {
+        // Yahoo Finance chart API (via proxy)
+        const result = data.chart.result[0];
+        const meta = result.meta;
+        const currentPrice = meta.regularMarketPrice;
+        const previousClose = meta.previousClose;
+        const change = currentPrice - previousClose;
+        const changePercent = (change / previousClose) * 100;
 
-      this.stockData = {
-        symbol: this.config.symbol,
-        name: this.config.name,
-        price: currentPrice.toFixed(2),
-        change: change.toFixed(2),
-        changePercent: changePercent.toFixed(2),
-        currency: meta.currency || "USD",
-        marketState: meta.marketState,
-        lastUpdated: new Date().toLocaleTimeString(),
-        chartData: result.indicators?.quote?.[0] || null,
-        timestamps: result.timestamp || null,
-        error: null
-      };
+        stockInfo = {
+          symbol: this.config.symbol,
+          name: this.config.name,
+          price: currentPrice.toFixed(2),
+          change: change.toFixed(2),
+          changePercent: changePercent.toFixed(2),
+          currency: meta.currency || "USD",
+          marketState: meta.marketState,
+          lastUpdated: new Date().toLocaleTimeString(),
+          chartData: result.indicators?.quote?.[0] || null,
+          timestamps: result.timestamp || null,
+          error: null
+        };
+      } else if (data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result.length > 0) {
+        // Yahoo Finance quote API
+        const quote = data.quoteResponse.result[0];
+        const currentPrice = quote.regularMarketPrice;
+        const previousClose = quote.regularMarketPreviousClose;
+        const change = currentPrice - previousClose;
+        const changePercent = (change / previousClose) * 100;
 
+        stockInfo = {
+          symbol: this.config.symbol,
+          name: this.config.name,
+          price: currentPrice.toFixed(2),
+          change: change.toFixed(2),
+          changePercent: changePercent.toFixed(2),
+          currency: quote.currency || "USD",
+          marketState: quote.marketState || "UNKNOWN",
+          lastUpdated: new Date().toLocaleTimeString(),
+          chartData: null, // No chart data from this endpoint
+          timestamps: null,
+          error: null
+        };
+      } else {
+        // Fallback: create mock data to show the card is working
+        stockInfo = {
+          symbol: this.config.symbol,
+          name: this.config.name,
+          price: "Loading...",
+          change: "0.00",
+          changePercent: "0.00",
+          currency: "USD",
+          marketState: "LOADING",
+          lastUpdated: new Date().toLocaleTimeString(),
+          chartData: null,
+          timestamps: null,
+          error: "API temporarily unavailable - showing demo data"
+        };
+      }
+
+      this.stockData = stockInfo;
       this.requestUpdate();
+      
     } catch (error) {
       console.error("Error fetching stock data:", error);
       this.stockData = {
-        ...this.stockData,
-        error: "Failed to fetch data: " + error.message
+        symbol: this.config.symbol,
+        name: this.config.name,
+        price: "Error",
+        change: "0.00",
+        changePercent: "0.00",
+        currency: "USD",
+        marketState: "ERROR",
+        lastUpdated: new Date().toLocaleTimeString(),
+        chartData: null,
+        timestamps: null,
+        error: "Failed to fetch data: " + error.message + " - This may be due to CORS restrictions in your browser."
       };
       this.requestUpdate();
     }
