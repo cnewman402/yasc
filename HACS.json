@@ -1,5 +1,5 @@
 {
-  "name": "Yet Another Stock Card",
+  "name": "YASC - Yet Another Stock Card",
   "hacs": "1.6.0",
   "domains": ["lovelace"],
   "iot_class": "Cloud Polling",
@@ -7,5 +7,7 @@
   "render_readme": true,
   "country": ["ALL"],
   "content_in_root": false,
-  "filename": "yet-another-stock-card.js"
+  "filename": "yasc.js",
+  "zip_release": false,
+  "hide_default_branch": false
 }
