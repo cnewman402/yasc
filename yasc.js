@@ -808,7 +808,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c YASC %c v1.0.0 ",
+  "%c YASC %c v1.1.0 - Enhanced GUI ",
   "color: orange; font-weight: bold; background: black",
   "color: white; font-weight: bold; background: dimgray"
 );
