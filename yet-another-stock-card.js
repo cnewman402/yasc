@@ -346,10 +346,10 @@ customElements.define('yasc', YetAnotherStockCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'yasc',
-  name: 'Yet Another Stock Card',
+  name: 'YASC - Yet Another Stock Card',
   description: 'A customizable stock price tracking card with real-time updates',
   preview: true,
-  documentationURL: 'https://github.com/yourusername/yet-another-stock-card',
+  documentationURL: 'https://github.com/yourusername/yasc',
   configurable: true
 });
 
@@ -584,7 +584,7 @@ class YetAnotherStockCardEditor extends HTMLElement {
 customElements.define('yasc-editor', YetAnotherStockCardEditor);
 
 console.info(
-  `%c YET-ANOTHER-STOCK-CARD %c v${YetAnotherStockCard.version} `,
+  `%c YASC %c v${YetAnotherStockCard.version} `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );
