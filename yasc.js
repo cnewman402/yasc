@@ -70,60 +70,9 @@ class YASCCard extends LitElement {
     try {
       const symbol = this.config.symbol;
       
-      // For now, let's use a working free API - Alpha Vantage demo or IEX Cloud
-      // Using a simple approach that should work without CORS issues
-      let apiUrl = `https://api.exchangerate-api.com/v4/latest/USD`; // Test CORS-friendly endpoint
-      
-      // Try a financial API that allows CORS
-      try {
-        apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-        const corsProxy = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`;
-        
-        const response = await fetch(corsProxy, {
-          method: "GET",
-          headers: {
-            "Accept": "application/json"
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.chart && data.chart.result && data.chart.result.length > 0) {
-            const result = data.chart.result[0];
-            const meta = result.meta;
-            const currentPrice = meta.regularMarketPrice;
-            const previousClose = meta.previousClose;
-            const change = currentPrice - previousClose;
-            const changePercent = (change / previousClose) * 100;
-
-            this.stockData = {
-              symbol: this.config.symbol,
-              name: this.config.name,
-              price: currentPrice.toFixed(2),
-              change: change.toFixed(2),
-              changePercent: changePercent.toFixed(2),
-              currency: meta.currency || "USD",
-              marketState: meta.marketState || "REGULAR",
-              lastUpdated: new Date().toLocaleTimeString(),
-              chartData: result.indicators?.quote?.[0] || null,
-              timestamps: result.timestamp || null,
-              error: null
-            };
-
-            this.requestUpdate();
-            return;
-          }
-        }
-      } catch (proxyError) {
-        console.log("Proxy method failed:", proxyError);
-      }
-      
-      // If real API fails, show realistic demo data
-      throw new Error("API temporarily unavailable");
-      
-    } catch (error) {
-      console.log("Using demo data:", error.message);
+      // Skip API calls entirely and go straight to demo mode
+      // This eliminates all CORS and API key issues
+      console.log("Using demo data for", symbol);
       
       // Generate realistic demo data based on the symbol
       const demoData = this.generateDemoData();
@@ -139,7 +88,26 @@ class YASCCard extends LitElement {
         lastUpdated: new Date().toLocaleTimeString(),
         chartData: demoData.chartData,
         timestamps: demoData.timestamps,
-        error: null // Remove error to show clean demo
+        error: null
+      };
+      this.requestUpdate();
+      
+    } catch (error) {
+      console.error("Error in demo data generation:", error);
+      
+      // Fallback to simple static demo
+      this.stockData = {
+        symbol: this.config.symbol,
+        name: this.config.name,
+        price: "185.42",
+        change: "2.35",
+        changePercent: "1.29",
+        currency: "USD",
+        marketState: "DEMO",
+        lastUpdated: new Date().toLocaleTimeString(),
+        chartData: null,
+        timestamps: null,
+        error: null
       };
       this.requestUpdate();
     }
@@ -527,8 +495,8 @@ class YASCCardEditor extends LitElement {
   }
 
   render() {
-    if (!this.hass) {
-      return html``;
+    if (!this.hass || !this.config) {
+      return html`<div>Loading editor...</div>`;
     }
 
     return html`
@@ -575,9 +543,11 @@ class YASCCardEditor extends LitElement {
           </ha-formfield>
         </div>
 
-        <div class="section-header">Popular Symbols</div>
+        <div class="section-header">Demo Mode</div>
         <div class="config-group">
           <div class="help-text">
+            This card currently runs in demo mode with realistic sample data.<br/>
+            <strong>Popular Symbols:</strong><br/>
             <strong>US Stocks:</strong> AAPL, GOOGL, MSFT, TSLA, AMZN, NVDA, META<br />
             <strong>Crypto:</strong> BTC-USD, ETH-USD, ADA-USD<br />
             <strong>Indices:</strong> ^GSPC (S&P 500), ^DJI (Dow Jones)
