@@ -1,4 +1,4 @@
-console.log('YASC v1.3.0 - Complete Implementation with Fixed Input Focus');
+console.log('YASC v1.4.0 - Complete Implementation with Blur Update Fix');
 
 class YetAnotherStockCard extends HTMLElement {
   constructor() {
@@ -279,6 +279,7 @@ class YascCardEditor extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this.pendingUpdates = {}; // Track pending changes
   }
 
   setConfig(config) {
@@ -406,17 +407,27 @@ class YascCardEditor extends HTMLElement {
     var symbolInputs = this.shadowRoot.querySelectorAll('.symbol-input');
     for (var i = 0; i < symbolInputs.length; i++) {
       var input = symbolInputs[i];
-      input.addEventListener('input', function(e) {
+      
+      // Use blur event instead of input event
+      input.addEventListener('blur', function(e) {
         var index = parseInt(e.target.getAttribute('data-index'));
         var value = e.target.value.toUpperCase();
+        e.target.value = value; // Update display to show uppercase
         self.updateSymbol(index, value);
+      });
+      
+      // Still handle input event for auto-uppercase display but don't trigger config update
+      input.addEventListener('input', function(e) {
+        e.target.value = e.target.value.toUpperCase();
       });
     }
 
     var nameInputs = this.shadowRoot.querySelectorAll('.name-input');
     for (var i = 0; i < nameInputs.length; i++) {
       var input = nameInputs[i];
-      input.addEventListener('input', function(e) {
+      
+      // Use blur event instead of input event  
+      input.addEventListener('blur', function(e) {
         var index = parseInt(e.target.getAttribute('data-index'));
         var value = e.target.value;
         self.updateName(index, value);
@@ -493,16 +504,7 @@ class YascCardEditor extends HTMLElement {
       symbols.push((this._config.symbols || ['AAPL'])[i]);
     }
     symbols[index] = value;
-    
-    // Update config without triggering full re-render
-    var newConfig = {};
-    for (var prop in this._config) {
-      newConfig[prop] = this._config[prop];
-    }
-    newConfig.symbols = symbols;
-    this._config = newConfig;
-    this.configChanged(newConfig);
-    // Don't call this.render() here to prevent losing focus
+    this.updateConfig('symbols', symbols);
   }
 
   updateName(index, value) {
@@ -514,16 +516,7 @@ class YascCardEditor extends HTMLElement {
       names.push('');
     }
     names[index] = value;
-    
-    // Update config without triggering full re-render
-    var newConfig = {};
-    for (var prop in this._config) {
-      newConfig[prop] = this._config[prop];
-    }
-    newConfig.names = names;
-    this._config = newConfig;
-    this.configChanged(newConfig);
-    // Don't call this.render() here to prevent losing focus
+    this.updateConfig('names', names);
   }
 
   updateConfig(key, value) {
@@ -564,4 +557,4 @@ window.customCards.push({
   documentationURL: 'https://github.com/yourusername/yasc'
 });
 
-console.log('YASC v1.3.0 - Complete Implementation Loaded Successfully!');
+console.log('YASC v1.4.0 - Complete Implementation with Blur Update Fix Loaded Successfully!');
